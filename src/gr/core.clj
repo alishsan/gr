@@ -5,7 +5,8 @@
   starting with the Schwarzschild metric."
   (:require [gr.schwarzschild :as sch]
             [gr.dirac :as dirac]
-            [gr.complex :as c :refer [complex-from-cartesian]]))
+            [gr.complex :as c :refer [complex-from-cartesian]])
+  (:refer-clojure :exclude [solve-dirac-schwarzschild dirac-current curved-gamma-matrices]))
 
 (defn example-schwarzschild-metric
   "Example: Compute Schwarzschild metric at a given radius."
@@ -39,3 +40,10 @@
   "Example: Compute Dirac current for a given spinor."
   [psi r M]
   (dirac/dirac-current psi r M))
+
+;; Re-export main dirac functions for convenience
+(def solve-dirac-schwarzschild dirac/solve-dirac-schwarzschild)
+(def dirac-current dirac/dirac-current)
+(def curved-gamma-matrices dirac/curved-gamma-matrices)
+(def spin-connection-term dirac/spin-connection-term)
+(def dirac-equation-rhs dirac/dirac-equation-rhs)

@@ -84,6 +84,20 @@
 
 (defn complex-conjugate [x] ( complex-from-cartesian (re x )  (* -1 ( im x)) ))
 
+;; Conversion functions for fastmath compatibility
+(defn to-fastmath-vec2
+  "Convert our complex number to fastmath Vec2 format.
+  Returns a vector [real imag] compatible with fastmath.complex/complex."
+  [z]
+  [(re z) (im z)])
+
+(defn from-fastmath-vec2
+  "Convert fastmath Vec2 (or [real imag] vector) to our complex number."
+  [v]
+  (if (vector? v)
+    (complex-from-cartesian (first v) (second v))
+    (complex-from-cartesian (re v) (im v))))
+
 (defn complex-integrate
   "Numerically integrate a complex-valued function f from a to b using n steps.
    Assumes f returns a complex-number instance."
@@ -133,4 +147,5 @@
   (div (complex-integrate (fn [[a b z] t] (mul (exp (mul -1.0 z t)) (cpow t (subt a 1)) (cpow (inc t) (subt b a 1))))
                           [a b z] 0.00001 1000 10000) (gamma-complex a) )
 )
+
 

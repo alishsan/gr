@@ -5,7 +5,7 @@
             [gr.dirac :as dirac]
             [clojure.core.matrix :as m]))
 
-(m/set-current-implementation :vectorz)
+(m/set-current-implementation :persistent-vector)
 
 (deftest schwarzschild-metric-test
   (testing "Schwarzschild metric at large radius approaches Minkowski"

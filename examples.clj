@@ -5,7 +5,7 @@
             [gr.complex :as c :refer [complex-from-cartesian re im]]
             [clojure.core.matrix :as m]))
 
-(m/set-current-implementation :vectorz)
+(m/set-current-implementation :persistent-vector)
 
 ;; Example 1: Compute Schwarzschild metric
 (println "Example 1: Schwarzschild Metric")

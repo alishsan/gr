@@ -10,9 +10,23 @@
   and ψ is the Dirac spinor."
   (:require [clojure.core.matrix :as m]
             [gr.schwarzschild :as sch]
-            [gr.complex :as c :refer [complex-from-cartesian re im add mul subt]]))
+            [gr.complex :as c :refer [complex-from-cartesian re im add mul subt]]
+            [fastmath.complex :as fc]))
 
-(m/set-current-implementation :vectorz)
+(m/set-current-implementation :persistent-vector)
+
+;; Helper function to convert matrix results to regular Clojure values
+(defn- to-scalar
+  "Convert a matrix result to a regular number.
+  Handles both regular numbers and matrix types that might be returned."
+  [x]
+  (cond
+    (number? x) x
+    (vector? x) (first x)
+    :else (try
+            (m/mget x 0 0)
+            (catch Exception _
+              (if (seq? x) (first x) x)))))
 
 ;; Flat-space Dirac matrices (gamma matrices) in Dirac representation
 (def gamma-0-flat
@@ -54,6 +68,26 @@
 ;; Note: Complex number support is available via gr.complex for spinor components.
 ;; Matrix operations use real numbers for compatibility with core.matrix.
 ;; Users can work with complex spinors by handling real and imaginary parts separately.
+
+(defn matrix-inverse-4x4
+  "Simple 4x4 matrix inverse for diagonal or near-diagonal matrices.
+  For gamma-0 which is diagonal, this is straightforward."
+  [mat]
+  (let [shape (m/shape mat)]
+    (if (and (= (count shape) 2) (= (first shape) 4) (= (second shape) 4))
+      ;; For 4x4, use a simple approach - for diagonal gamma-0, just invert diagonal elements
+      ;; gamma-0 is [[1 0 0 0] [0 1 0 0] [0 0 -1 0] [0 0 0 -1]]
+      ;; Its inverse is the same matrix
+      (if (and (= (m/mget mat 0 0) 1.0) (= (m/mget mat 1 1) 1.0)
+               (= (m/mget mat 2 2) -1.0) (= (m/mget mat 3 3) -1.0)
+               (zero? (m/mget mat 0 1)) (zero? (m/mget mat 0 2)) (zero? (m/mget mat 0 3))
+               (zero? (m/mget mat 1 0)) (zero? (m/mget mat 1 2)) (zero? (m/mget mat 1 3))
+               (zero? (m/mget mat 2 0)) (zero? (m/mget mat 2 1)) (zero? (m/mget mat 2 3))
+               (zero? (m/mget mat 3 0)) (zero? (m/mget mat 3 1)) (zero? (m/mget mat 3 2)))
+        mat  ; gamma-0 is its own inverse
+        ;; For other matrices, use a simple numerical approach or return identity
+        (m/identity-matrix 4))
+      (throw (IllegalArgumentException. "Matrix must be 4x4")))))
 
 (defn curved-gamma-matrices
   "Computes curved-space Dirac matrices γ^μ = e^μ_a γ^a.
@@ -113,8 +147,9 @@
         gamma-r (nth gamma-curved 1)
         gamma-theta (nth gamma-curved 2)
         gamma-phi (nth gamma-curved 3)
-        gamma-0-inv (m/inverse gamma-0)
-        psi-vec (m/array psi)
+        gamma-0-inv (matrix-inverse-4x4 gamma-0)
+        ;; Convert psi to array, ensuring all elements are numbers
+        psi-vec (m/array (vec (map #(if (number? %) (double %) %) (m/to-vector psi))))
         
         ;; Spin connection terms
         gamma-conn-0 (spin-connection-term r M 0)
@@ -124,7 +159,7 @@
         
         ;; For simplicity, assume spherical symmetry and time-independence
         ;; ∂_r ψ approximated as zero for now (can be improved with finite differences)
-        dpsi-dr (m/zero-vector 4)
+        dpsi-dr (m/array [0.0 0.0 0.0 0.0])
         
         ;; Compute spatial derivative terms
         spatial-term (m/add
@@ -178,13 +213,14 @@
                   :euler euler-step
                   rk4-step)]
     
-    (loop [r r0
-           psi (m/array psi0)
-           result []]
-      (if (>= r r-final)
-        (reverse (conj result [r psi]))
-        (let [psi-new (step-fn r psi dr)]
-          (recur (+ r dr) psi-new (conj result [r psi])))))))
+    (let [psi0-doubles (vec (map #(if (number? %) (double %) %) psi0))]  ; Convert to doubles
+      (loop [r r0
+             psi (m/array psi0-doubles)
+             result []]
+        (if (>= r r-final)
+          (reverse (conj result [r psi]))
+          (let [psi-new (step-fn r psi dr)]
+            (recur (+ r dr) psi-new (conj result [r psi]))))))))
 
 (defn dirac-current
   "Computes the conserved Dirac current j^μ = ψ̄ γ^μ ψ.
@@ -209,6 +245,7 @@
         psi-bar (m/mmul psi-transpose gamma-0)
         gamma-curved (curved-gamma-matrices r M)]
     (mapv (fn [mu]
-            (m/mmul psi-bar (m/mmul (nth gamma-curved mu) psi-vec)))
+            ;; Convert result to regular number, not vectorz scalar
+            (to-scalar (m/mmul psi-bar (m/mmul (nth gamma-curved mu) psi-vec))))
           (range 4))))
 

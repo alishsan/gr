@@ -2,7 +2,7 @@
   "Schwarzschild metric and geometry for General Relativity calculations."
   (:require [clojure.core.matrix :as m]))
 
-(m/set-current-implementation :vectorz)
+(m/set-current-implementation :persistent-vector)
 
 (defn schwarzschild-metric
   "Returns the Schwarzschild metric tensor g_μν at coordinates (t, r, θ, φ).
