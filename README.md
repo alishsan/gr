@@ -149,7 +149,7 @@ gr/
 
 - `org.clojure/clojure` - Clojure language
 - `net.mikera/core.matrix` - Matrix operations
-- `net.mikera/vectorz-clj` - Vector operations
+- `generateme/fastmath` - Numerical utilities and complex numbers
 
 ## Complex Number Support
 
@@ -175,6 +175,8 @@ The library includes a full complex number implementation (`gr.complex`) with:
 1. Dirac, P. A. M. (1928). "The quantum theory of the electron". Proceedings of the Royal Society of London.
 2. Chandrasekhar, S. (1983). "The Mathematical Theory of Black Holes". Oxford University Press.
 3. Parker, L., & Toms, D. J. (2009). "Quantum Field Theory in Curved Spacetime". Cambridge University Press.
+4. Collas, P., & Klein, D. (2018). "The Dirac equation in general relativity: A guide for calculations" [`arxiv.org/pdf/1809.02764`](https://arxiv.org/pdf/1809.02764).  
+   - The tetrad and spin-connection implementation for Schwarzschild spacetime in `schwarzschild.clj` and `dirac.clj` follows the Fock–Ivanenko and Ricci rotation coefficient conventions of Sec. 1.1–1.2 and the Schwarzschild examples in Sec. 2.2 of this reference.
 
 ## License
 
